@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Currículo Premium — Gerador de Currículos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    :root { --accent:#4f46e5; --accent-soft:#eef2ff; }
+    * { box-sizing:border-box; }
+    body { background:#f1f5f9; color:#0f172a; }
+    .app-shell { min-height:100vh; }
+    .panel { background:#fff; border:1px solid #e2e8f0; border-radius:18px; box-shadow:0 8px 28px rgba(15,23,42,.045); }
+    .field { width:100%; border:1px solid #cbd5e1; border-radius:10px; padding:10px 12px; font-size:14px; color:#0f172a; background:#fff; outline:none; transition:.15s; }
+    .field:focus { border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent); }
+    .field-label { display:block; font-size:12px; font-weight:700; color:#475569; margin-bottom:6px; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; border-radius:10px; padding:10px 14px; font-size:13px; font-weight:700; transition:.15s; }
+    .btn-primary { background:var(--accent); color:white; }
+    .btn-primary:hover { filter:brightness(.94); transform:translateY(-1px); }
+    .btn-secondary { border:1px solid #cbd5e1; color:#334155; background:#fff; }
+    .btn-secondary:hover { background:#f8fafc; }
+    .tab-btn { display:flex; align-items:center; gap:9px; padding:11px 12px; border-radius:10px; color:#64748b; font-size:13px; font-weight:700; width:100%; text-align:left; }
+    .tab-btn.active { background:var(--accent-soft); color:var(--accent); }
+    .tab-btn:hover:not(.active) { background:#f8fafc; color:#334155; }
+    .section-heading { font-size:14px; font-weight:800; color:#0f172a; }
+    .resume-stage { background:#e2e8f0; border-radius:16px; padding:24px; overflow:auto; min-height:720px; }
+    #resume { width:210mm; min-height:297mm; margin:0 auto; background:white; color:#1e293b; box-shadow:0 12px 35px rgba(15,23,42,.16); font-family:Arial, Helvetica, sans-serif; font-size:10pt; line-height:1.45; overflow-wrap:anywhere; }
+    #resume .resume-inner { padding:17mm 17mm 16mm; }
+    #resume h1 { font-size:25pt; line-height:1.12; font-weight:800; letter-spacing:-.6px; margin:0; }
+    #resume h2 { font-size:10pt; text-transform:uppercase; letter-spacing:1.2px; font-weight:800; margin:17px 0 8px; padding-bottom:5px; border-bottom:1px solid #dbe2ea; color:var(--accent); }
+    #resume .resume-title { font-size:11pt; margin-top:6px; font-weight:600; color:#475569; }
+    #resume .contact-line { font-size:8.5pt; color:#475569; margin-top:12px; display:flex; flex-wrap:wrap; gap:5px 12px; }
+    #resume .entry { margin:0 0 11px; break-inside:avoid; page-break-inside:avoid; }
+    #resume .entry-top { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+    #resume .entry-title { font-size:10pt; font-weight:800; color:#0f172a; }
+    #resume .entry-sub { color:#475569; font-size:9pt; margin-top:1px; }
+    #resume .entry-date { font-size:8.5pt; color:#64748b; text-align:right; white-space:nowrap; }
+    #resume p { margin:5px 0 0; white-space:pre-line; }
+    #resume ul { margin:5px 0 0 16px; padding:0; }
+    #resume li { padding-left:2px; margin:2px 0; }
+    #resume .skill-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+    #resume .skill { border:1px solid #dbe2ea; border-radius:5px; padding:3px 7px; font-size:8.5pt; color:#334155; }
+    #resume.template-executivo .resume-inner { padding-top:20mm; }
+    #resume.template-executivo .resume-header { border-left:4px solid var(--accent); padding-left:16px; }
+    #resume.template-executivo h2 { border-bottom:1px solid var(--accent); color:#1e293b; letter-spacing:1.5px; }
+    #resume.template-classico .resume-inner { padding:18mm 20mm; }
+    #resume.template-classico h1 { font-family:Georgia, 'Times New Roman', serif; font-size:24pt; }
+    #resume.template-classico h2 { color:#334155; border-bottom:1px solid #94a3b8; }
+    #resume.template-minimalista .resume-inner { padding:21mm 19mm; }
+    #resume.template-minimalista h1 { font-size:27pt; font-weight:500; letter-spacing:-.9px; }
+    #resume.template-minimalista h2 { border:0; padding:0; margin-top:20px; color:#334155; }
+    #resume.template-minimalista .skill { border:0; background:#f1f5f9; }
+    .template-choice { border:1px solid #cbd5e1; border-radius:10px; padding:10px; font-size:12px; font-weight:700; text-align:center; color:#475569; }
+    .template-choice.selected { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
+    .color-dot { width:25px; height:25px; border-radius:999px; border:3px solid white; box-shadow:0 0 0 1px #cbd5e1; cursor:pointer; }
+    .color-dot.selected { box-shadow:0 0 0 2px #0f172a; }
+    .skill-chip { display:inline-flex; align-items:center; gap:5px; background:var(--accent-soft); color:var(--accent); border-radius:7px; padding:6px 8px; font-size:12px; font-weight:700; }
+    .skill-chip button { opacity:.7; }
+    .hidden-panel { display:none; }
+    .modal-backdrop { background:rgba(15,23,42,.65); backdrop-filter:blur(5px); }
+    @media (max-width: 1100px) {
+      .workspace { grid-template-columns:1fr !important; }
+      .resume-stage { padding:14px; min-height:400px; }
+      #resume { transform-origin:top left; }
+    }
+    @media (max-width: 640px) {
+      .resume-stage { padding:8px; }
+      #resume { width:210mm; transform:scale(.48); transform-origin:top left; margin-bottom:-150mm; }
+    }
+    @page { size:A4; margin:0; }
+    @media print {
+      body { background:white !important; }
+      body * { visibility:hidden !important; }
+      #resume, #resume * { visibility:visible !important; }
+      #resume { position:absolute !important; left:0 !important; top:0 !important; width:210mm !important; min-height:297mm !important; margin:0 !important; box-shadow:none !important; transform:none !important; }
+      #resume .resume-inner { padding:17mm !important; }
+      .no-print { display:none !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <header class="bg-slate-950 text-white no-print">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center"><i data-lucide="file-user" class="w-5 h-5"></i></div>
+        <div><div class="font-extrabold tracking-tight text-lg">Currículo<span class="text-indigo-300">Premium</span></div><div class="text-xs text-slate-400">Seu próximo passo começa aqui</div></div>
+      </div>
+      <div class="hidden sm:flex items-center gap-2 text-xs text-slate-300"><i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i> Seus dados ficam neste navegador</div>
+      <button id="sampleTop" class="btn bg-white/10 hover:bg-white/15 text-white"><i data-lucide="sparkles" class="w-4 h-4"></i><span class="hidden sm:inline">Carregar exemplo</span><span class="sm:hidden">Exemplo</span></button>
+    </div>
+  </header>
+
+  <main class="max-w-[1600px] mx-auto p-3 sm:p-5 lg:p-6">
+    <div class="mb-5 flex flex-col md:flex-row md:items-end md:justify-between gap-3 no-print">
+      <div><p class="text-xs uppercase tracking-[.18em] font-bold text-indigo-600 mb-1">Construtor de currículo</p><h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">Crie uma apresentação profissional.</h1><p class="text-sm text-slate-500 mt-1">Edite à esquerda e acompanhe o resultado em tempo real.</p></div>
+      <div class="flex flex-wrap gap-2"><button id="clearAll" class="btn btn-secondary"><i data-lucide="rotate-ccw" class="w-4 h-4"></i> Limpar</button><button id="openDonation" class="btn btn-primary"><i data-lucide="file-down" class="w-4 h-4"></i> Baixar PDF / Imprimir</button></div>
+    </div>
+
+    <div class="workspace grid grid-cols-[minmax(340px,440px)_minmax(0,1fr)] gap-5 items-start">
+      <section class="panel p-4 sm:p-5 no-print">
+        <div class="flex items-center justify-between mb-4"><div><h2 class="font-extrabold text-slate-900">Editor do currículo</h2><p class="text-xs text-slate-500 mt-1">Preencha somente o que for relevante.</p></div><span class="text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500 px-2 py-1 rounded-full">Passo a passo</span></div>
+        <div class="grid grid-cols-2 gap-1 bg-slate-50 p-1 rounded-xl mb-4" id="editorTabs">
+          <button class="tab-btn active" data-tab="pessoal"><i data-lucide="user-round" class="w-4 h-4"></i> Pessoal</button>
+          <button class="tab-btn" data-tab="experiencia"><i data-lucide="briefcase-business" class="w-4 h-4"></i> Experiência</button>
+          <button class="tab-btn" data-tab="formacao"><i data-lucide="graduation-cap" class="w-4 h-4"></i> Formação</button>
+          <button class="tab-btn" data-tab="competencias"><i data-lucide="badge-check" class="w-4 h-4"></i> Competências</button>
+        </div>
+
+        <div id="panel-pessoal" class="editor-panel space-y-4">
+          <div><h3 class="section-heading">Dados pessoais</h3><p class="text-xs text-slate-500 mt-1 mb-3">Como recrutadores podem entrar em contato.</p>
+            <div class="grid grid-cols-2 gap-3">
+              <label class="col-span-2"><span class="field-label">Nome completo</span><input class="field" id="name" placeholder="Ex.: Mariana Oliveira" /></label>
+              <label class="col-span-2"><span class="field-label">Cargo ou título profissional</span><input class="field" id="title" placeholder="Ex.: Analista de Sistemas" /></label>
+              <label><span class="field-label">E-mail</span><input class="field" id="email" type="email" placeholder="voce@email.com" /></label>
+              <label><span class="field-label">Telefone</span><input class="field" id="phone" placeholder="(11) 99999-9999" /></label>
+              <label class="col-span-2"><span class="field-label">Cidade / Estado</span><input class="field" id="location" placeholder="São Paulo, SP" /></label>
+              <label class="col-span-2"><span class="field-label">LinkedIn</span><input class="field" id="linkedin" placeholder="linkedin.com/in/seuperfil" /></label>
+              <label class="col-span-2"><span class="field-label">Portfólio / GitHub / site</span><input class="field" id="portfolio" placeholder="github.com/seuusuario" /></label>
+            </div>
+          </div>
+          <div><h3 class="section-heading">Resumo profissional</h3><p class="text-xs text-slate-500 mt-1 mb-3">Apresente seu perfil, pontos fortes e objetivo em poucas linhas.</p><textarea id="summary" class="field min-h-[120px]" placeholder="Profissional com experiência em..."></textarea><div class="text-right text-[11px] text-slate-400 mt-1"><span id="summaryCount">0</span>/700</div></div>
+          <div><h3 class="section-heading mb-3">Estilo visual</h3><div class="grid grid-cols-2 gap-2" id="templateChoices">
+            <button class="template-choice selected" data-template="moderno">Moderno</button><button class="template-choice" data-template="executivo">Executivo</button><button class="template-choice" data-template="classico">Clássico</button><button class="template-choice" data-template="minimalista">Minimalista</button>
+          </div><p class="field-label mt-4 mb-2">Cor de destaque</p><div class="flex items-center gap-3" id="colorChoices">
+            <button class="color-dot selected" data-color="#4f46e5" style="background:#4f46e5" aria-label="Índigo"></button><button class="color-dot" data-color="#0f766e" style="background:#0f766e" aria-label="Verde petróleo"></button><button class="color-dot" data-color="#1d4ed8" style="background:#1d4ed8" aria-label="Azul"></button><button class="color-dot" data-color="#9f1239" style="background:#9f1239" aria-label="Vinho"></button><button class="color-dot" data-color="#334155" style="background:#334155" aria-label="Ardósia"></button>
+          </div></div>
+        </div>
+
+        <div id="panel-experiencia" class="editor-panel hidden-panel space-y-4">
+          <div class="flex items-start justify-between gap-3"><div><h3 class="section-heading">Experiência profissional</h3><p class="text-xs text-slate-500 mt-1">Comece pela experiência mais recente.</p></div><button id="addExperience" class="btn btn-secondary !px-3 !py-2"><i data-lucide="plus" class="w-4 h-4"></i> Adicionar</button></div>
+          <div id="experienceList" class="space-y-4"></div>
+        </div>
+
+        <div id="panel-formacao" class="editor-panel hidden-panel space-y-4">
+          <div class="flex items-start justify-between gap-3"><div><h3 class="section-heading">Formação acadêmica</h3><p class="text-xs text-slate-500 mt-1">Inclua graduação, cursos técnicos ou relevantes.</p></div><button id="addEducation" class="btn btn-secondary !px-3 !py-2"><i data-lucide="plus" class="w-4 h-4"></i> Adicionar</button></div>
+          <div id="educationList" class="space-y-4"></div>
+          <div class="border-t border-slate-100 pt-4"><h3 class="section-heading mb-3">Idiomas</h3><label><span class="field-label">Idiomas e níveis</span><textarea id="languages" class="field" rows="3" placeholder="Português — Nativo&#10;Inglês — Intermediário"></textarea></label></div>
+          <div class="pt-2"><h3 class="section-heading mb-3">Certificações</h3><label><span class="field-label">Certificações, cursos e licenças</span><textarea id="certifications" class="field" rows="4" placeholder="Nome da certificação — Instituição (ano)"></textarea></label></div>
+        </div>
+
+        <div id="panel-competencias" class="editor-panel hidden-panel space-y-4">
+          <div><h3 class="section-heading">Habilidades e competências</h3><p class="text-xs text-slate-500 mt-1 mb-3">Adicione termos específicos da vaga e da sua área.</p>
+            <div class="flex gap-2"><input id="skillInput" class="field" placeholder="Ex.: Gestão de projetos" /><button id="addSkill" class="btn btn-primary !px-3"><i data-lucide="plus" class="w-4 h-4"></i></button></div>
+            <div id="skillChips" class="flex flex-wrap gap-2 mt-3"></div>
+            <p class="text-[11px] text-slate-400 mt-3">Dica: priorize competências verdadeiras e alinhadas à oportunidade.</p>
+          </div>
+          <div class="border-t border-slate-100 pt-4"><h3 class="section-heading mb-3">Seções opcionais</h3><label><span class="field-label">Projetos, voluntariado ou realizações</span><textarea id="extras" class="field" rows="5" placeholder="Projeto ou realização — breve descrição"></textarea></label></div>
+        </div>
+        <div class="border-t border-slate-100 mt-5 pt-4 flex items-center justify-between gap-3"><span class="text-[11px] text-slate-400"><i data-lucide="check-circle-2" class="inline w-3 h-3 mr-1"></i>Atualização automática</span><button id="sampleBottom" class="text-xs font-bold text-indigo-600 hover:text-indigo-800">Preencher exemplo</button></div>
+      </section>
+
+      <section class="min-w-0">
+        <div class="panel p-3 sm:p-4 mb-4 no-print">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="flex items-center gap-3"><div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center"><i data-lucide="eye" class="w-4 h-4"></i></div><div><h2 class="font-extrabold text-slate-900 text-sm">Pré-visualização</h2><p class="text-xs text-slate-500">Formato A4 • Atualizado em tempo real</p></div></div>
+            <div class="flex flex-wrap items-center gap-2"><span class="text-xs text-slate-500">Modelo:</span><select id="templateSelect" class="field !w-auto !py-2 !text-xs"><option value="moderno">Moderno</option><option value="executivo">Executivo</option><option value="classico">Clássico</option><option value="minimalista">Minimalista</option></select><button id="printTop" class="btn btn-secondary !py-2"><i data-lucide="printer" class="w-4 h-4"></i> Imprimir</button></div>
+          </div>
+        </div>
+        <div class="resume-stage"><article id="resume" class="template-moderno"><div class="resume-inner">
+          <header class="resume-header"><h1 id="pv-name">Seu Nome Completo</h1><div class="resume-title" id="pv-title">Seu cargo ou título profissional</div><div class="contact-line" id="pv-contact"></div></header>
+          <section id="sec-summary"><h2>Resumo profissional</h2><p id="pv-summary">Use este espaço para apresentar um resumo objetivo da sua trajetória, suas principais competências e o valor que pode agregar à organização.</p></section>
+          <section id="sec-experience"><h2>Experiência profissional</h2><div id="pv-experience"></div></section>
+          <section id="sec-education"><h2>Formação acadêmica</h2><div id="pv-education"></div></section>
+          <section id="sec-skills"><h2>Habilidades e competências</h2><div class="skill-list" id="pv-skills"></div></section>
+          <section id="sec-languages"><h2>Idiomas</h2><p id="pv-languages"></p></section>
+          <section id="sec-certifications"><h2>Certificações</h2><p id="pv-certifications"></p></section>
+          <section id="sec-extras"><h2>Projetos e realizações</h2><p id="pv-extras"></p></section>
+        </div></article></div>
+        <p class="text-center text-xs text-slate-400 mt-3 no-print">Prévia aproximada. Revise o conteúdo e a paginação antes de enviar seu currículo.</p>
+      </section>
+    </div>
+    <footer class="text-center text-xs text-slate-400 py-7 no-print">Feito para ajudar você a apresentar o seu melhor. <span class="text-slate-500">Currículo Premium</span></footer>
+  </main>
+</div>
+
+<div id="donationModal" class="fixed inset-0 z-50 hidden items-center justify-center p-3 sm:p-5 modal-backdrop no-print" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="bg-white w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden max-h-[95vh] overflow-y-auto">
+    <div class="bg-slate-950 text-white p-6 sm:p-7 relative">
+      <button id="closeModal" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-lg hover:bg-white/10" aria-label="Fechar"><i data-lucide="x" class="w-5 h-5"></i></button>
+      <div class="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-300 flex items-center justify-center mb-4"><i data-lucide="heart-handshake" class="w-6 h-6"></i></div>
+      <p class="text-xs uppercase tracking-[.2em] font-bold text-indigo-300 mb-2">Apoio voluntário</p>
+      <h2 id="modalTitle" class="text-2xl sm:text-3xl font-extrabold tracking-tight">Apoie este projeto gratuito!</h2>
+      <p class="text-sm text-slate-300 mt-3 leading-relaxed">Se esta ferramenta foi útil para você, considere uma contribuição simbólica via PIX. Seu apoio ajuda a manter o projeto gratuito e disponível para mais pessoas.</p>
+    </div>
+    <div class="p-6 sm:p-7">
+      <div class="grid sm:grid-cols-[150px_1fr] gap-5 items-center">
+        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 flex flex-col items-center">
+          <div id="pixQr" class="w-[128px] h-[128px] bg-white flex items-center justify-center rounded-lg overflow-hidden"></div>
+          <span class="text-[10px] font-bold text-slate-500 mt-2 uppercase tracking-wider">QR Code da chave</span>
+        </div>
+        <div>
+          <div class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Chave PIX (telefone)</div>
+          <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl p-3"><span id="pixKey" class="font-extrabold text-slate-900 text-lg tracking-wide flex-1">44999632980</span><button id="copyPix" class="btn btn-secondary !px-3 !py-2 whitespace-nowrap"><i data-lucide="copy" class="w-4 h-4"></i><span>Copiar chave</span></button></div>
+          <p id="copyFeedback" class="text-xs text-emerald-600 font-bold mt-2 hidden"><i data-lucide="check" class="inline w-3 h-3 mr-1"></i>Chave PIX copiada!</p>
+          <p class="text-xs text-slate-500 mt-3 leading-relaxed"><i data-lucide="info" class="inline w-3 h-3 mr-1"></i>O QR Code contém a chave PIX em texto. Se o app do banco não reconhecer o código como cobrança, copie a chave e cole na opção PIX do seu banco.</p>
+        </div>
+      </div>
+      <div class="border-t border-slate-100 my-6"></div>
+      <div class="flex items-start gap-3 mb-5"><i data-lucide="file-check-2" class="w-5 h-5 text-indigo-600 mt-0.5"></i><div><p class="font-bold text-slate-900 text-sm">Seu currículo está pronto para exportar.</p><p class="text-xs text-slate-500 mt-1">A contribuição é opcional. Você pode baixar o PDF mesmo sem doar.</p></div></div>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <button id="donateAndDownload" class="btn btn-primary py-3"><i data-lucide="heart" class="w-4 h-4"></i> Já fiz o PIX / Apoiar e Baixar</button>
+        <button id="downloadWithoutDonation" class="btn btn-secondary py-3"><i data-lucide="download" class="w-4 h-4"></i> Baixar PDF sem doar</button>
+      </div>
+      <p class="text-[10px] text-slate-400 text-center mt-4">Apoio voluntário • Sem cobrança automática</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const state = { template: 'moderno', accent: '#4f46e5', skills: [], experiences: [], education: [], expId: 0, eduId: 0 };
+  const fields = ['name','title','email','phone','location','linkedin','portfolio','summary','languages','certifications','extras'];
+  const safe = (value) => String(value || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const linesToList = (text) => String(text || '').split('\n').map(x=>x.trim()).filter(Boolean);
+  const iconRefresh = () => { if (window.lucide) lucide.createIcons(); };
+
+  function addExperience(data = {}) {
+    const item = { id: ++state.expId, role: data.role || '', company: data.company || '', period: data.period || '', description: data.description || '' };
+    state.experiences.push(item); renderExperienceEditor(); renderResume();
+  }
+  function renderExperienceEditor() {
+    $('experienceList').innerHTML = state.experiences.map((e, idx) => `
+      <div class="rounded-xl border border-slate-200 p-3 sm:p-4" data-exp="${e.id}">
+        <div class="flex justify-between items-center mb-3"><span class="text-xs font-extrabold text-slate-500">EXPERIÊNCIA ${idx+1}</span><button class="remove-exp text-slate-400 hover:text-rose-600 p-1" data-id="${e.id}" aria-label="Remover experiência"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>
+        <div class="space-y-3">
+          <label><span class="field-label">Cargo</span><input class="field exp-field" data-id="${e.id}" data-key="role" value="${safe(e.role)}" placeholder="Ex.: Analista de Sistemas"></label>
+          <label><span class="field-label">Empresa</span><input class="field exp-field" data-id="${e.id}" data-key="company" value="${safe(e.company)}" placeholder="Nome da empresa"></label>
+          <label><span class="field-label">Período</span><input class="field exp-field" data-id="${e.id}" data-key="period" value="${safe(e.period)}" placeholder="Jan/2023 — Atual"></label>
+          <label><span class="field-label">Descrição (um tópico por linha)</span><textarea class="field exp-field" data-id="${e.id}" data-key="description" rows="4" placeholder="Responsável por...">${safe(e.description)}</textarea></label>
+        </div>
+      </div>`).join('');
+    iconRefresh();
+  }
+  function addEducation(data = {}) {
+    const item = { id: ++state.eduId, course: data.course || '', institution: data.institution || '', period: data.period || '' };
+    state.education.push(item); renderEducationEditor(); renderResume();
+  }
+  function renderEducationEditor() {
+    $('educationList').innerHTML = state.education.map((e, idx) => `
+      <div class="rounded-xl border border-slate-200 p-3 sm:p-4" data-edu="${e.id}">
+        <div class="flex justify-between items-center mb-3"><span class="text-xs font-extrabold text-slate-500">FORMAÇÃO ${idx+1}</span><button class="remove-edu text-slate-400 hover:text-rose-600 p-1" data-id="${e.id}" aria-label="Remover formação"><i data-lucide="trash-2" class="w-4 h-4"></i></button></div>
+        <div class="space-y-3">
+          <label><span class="field-label">Curso / grau</span><input class="field edu-field" data-id="${e.id}" data-key="course" value="${safe(e.course)}" placeholder="Ex.: Bacharelado em Administração"></label>
+          <label><span class="field-label">Instituição</span><input class="field edu-field" data-id="${e.id}" data-key="institution" value="${safe(e.institution)}" placeholder="Universidade ou instituição"></label>
+          <label><span class="field-label">Período</span><input class="field edu-field" data-id="${e.id}" data-key="period" value="${safe(e.period)}" placeholder="2020 — 2024"></label>
+        </div>
+      </div>`).join('');
+    iconRefresh();
+  }
+  function renderSkills() {
+    $('skillChips').innerHTML = state.skills.map((skill, i) => `<span class="skill-chip">${safe(skill)}<button data-index="${i}" class="remove-skill" aria-label="Remover ${safe(skill)}"><i data-lucide="x" class="w-3 h-3"></i></button></span>`).join('');
+    iconRefresh();
+  }
+  function setSectionVisibility(id, hasContent) { $(id).style.display = hasContent ? '' : 'none'; }
+  function renderResume() {
+    const val = id => $(id).value.trim();
+    $('pv-name').textContent = val('name') || 'Seu Nome Completo';
+    $('pv-title').textContent = val('title') || 'Seu cargo ou título profissional';
+    const contacts = [val('email'),val('phone'),val('location'),val('linkedin'),val('portfolio')].filter(Boolean);
+    $('pv-contact').innerHTML = contacts.map(s=>`<span>${safe(s)}</span>`).join('<span aria-hidden="true">•</span>');
+    const summary = val('summary');
+    $('pv-summary').textContent = summary || 'Use este espaço para apresentar um resumo objetivo da sua trajetória, suas principais competências e o valor que pode agregar à organização.';
+    setSectionVisibility('sec-summary', true);
+    $('pv-experience').innerHTML = state.experiences.filter(e=>e.role||e.company||e.description||e.period).map(e => {
+      const bullets = linesToList(e.description);
+      return `<div class="entry"><div class="entry-top"><div><div class="entry-title">${safe(e.role || 'Cargo')}</div><div class="entry-sub">${safe(e.company)}</div></div><div class="entry-date">${safe(e.period)}</div></div>${bullets.length ? `<ul>${bullets.map(b=>`<li>${safe(b.replace(/^[-•]\s*/,''))}</li>`).join('')}</ul>` : ''}</div>`;
+    }).join('');
+    setSectionVisibility('sec-experience', !!$('pv-experience').innerHTML);
+    $('pv-education').innerHTML = state.education.filter(e=>e.course||e.institution||e.period).map(e=>`<div class="entry"><div class="entry-top"><div><div class="entry-title">${safe(e.course || 'Curso')}</div><div class="entry-sub">${safe(e.institution)}</div></div><div class="entry-date">${safe(e.period)}</div></div></div>`).join('');
+    setSectionVisibility('sec-education', !!$('pv-education').innerHTML);
+    $('pv-skills').innerHTML = state.skills.map(s=>`<span class="skill">${safe(s)}</span>`).join('');
+    setSectionVisibility('sec-skills', state.skills.length > 0);
+    [['languages','pv-languages','sec-languages'],['certifications','pv-certifications','sec-certifications'],['extras','pv-extras','sec-extras']].forEach(([field,out,section])=>{
+      const text = val(field); $(out).textContent = text; setSectionVisibility(section, !!text);
+    });
+    $('summaryCount').textContent = $('summary').value.length;
+    $('resume').className = 'template-' + state.template;
+    document.documentElement.style.setProperty('--accent', state.accent);
+    document.documentElement.style.setProperty('--accent-soft', state.accent + '18');
+  }
+  function setTemplate(template) {
+    state.template = template; $('templateSelect').value = template;
+    document.querySelectorAll('.template-choice').forEach(b=>b.classList.toggle('selected',b.dataset.template===template));
+    renderResume();
+  }
+  function loadSample() {
+    fields.forEach(id => { if ($(id)) $(id).value = ''; });
+    $('name').value = 'Mariana Oliveira'; $('title').value = 'Analista de Sistemas | Melhoria de Processos';
+    $('email').value = 'mariana.oliveira@email.com'; $('phone').value = '(11) 99999-1234'; $('location').value = 'São Paulo, SP';
+    $('linkedin').value = 'linkedin.com/in/marianaoliveira'; $('portfolio').value = 'github.com/marianaoliveira';
+    $('summary').value = 'Profissional orientada a resultados, com experiência em análise de processos, levantamento de requisitos e colaboração entre equipes multidisciplinares. Facilidade para transformar necessidades do negócio em soluções claras, organizar prioridades e comunicar informações técnicas a diferentes públicos.';
+    $('languages').value = 'Português — Nativo\\nInglês — Intermediário';
+    $('certifications').value = 'Fundamentos de Gestão de Projetos — 2024\\nExcel para Análise de Dados — 2023';
+    $('extras').value = 'Projeto de melhoria de processos: mapeamento de etapas operacionais e documentação de oportunidades para reduzir retrabalho.';
+    state.experiences = []; state.education = []; state.skills = [];
+    addExperience({role:'Analista de Processos',company:'Grupo Horizonte',period:'Mar/2023 — Atual',description:'Mapeamento e documentação de processos internos.\\nApoio ao levantamento de requisitos junto às áreas de negócio.\\nElaboração de relatórios para acompanhamento de indicadores.'});
+    addExperience({role:'Assistente Administrativa',company:'Soluções Integradas',period:'Jan/2021 — Fev/2023',description:'Organização de documentos e atualização de bases de dados.\\nSuporte a equipes internas e acompanhamento de prazos.'});
+    addEducation({course:'Bacharelado em Sistemas de Informação',institution:'Universidade Metropolitana',period:'2020 — 2024'});
+    addEducation({course:'Técnico em Administração',institution:'Instituto Profissionalizante',period:'2018 — 2019'});
+    state.skills = ['Análise de requisitos','Gestão de processos','Excel','Comunicação','Resolução de problemas','Trabalho em equipe'];
+    renderExperienceEditor(); renderEducationEditor(); renderSkills(); setTemplate('moderno'); renderResume();
+  }
+  function clearAll() {
+    if (!confirm('Deseja limpar todos os dados do currículo?')) return;
+    fields.forEach(id => { if ($(id)) $(id).value = ''; });
+    state.experiences = []; state.education = []; state.skills = [];
+    renderExperienceEditor(); renderEducationEditor(); renderSkills(); renderResume();
+  }
+  function openModal() {
+    $('donationModal').classList.remove('hidden'); $('donationModal').classList.add('flex');
+    $('copyFeedback').classList.add('hidden');
+    if (!$('pixQr').dataset.generated) {
+      $('pixQr').innerHTML = '';
+      try { new QRCode($('pixQr'), {text:'44999632980', width:128, height:128, colorDark:'#0f172a', colorLight:'#ffffff', correctLevel:QRCode.CorrectLevel.M}); $('pixQr').dataset.generated = 'true'; }
+      catch (e) { $('pixQr').innerHTML = '<div class="text-xs text-slate-500 text-center p-2">Não foi possível gerar o QR Code. Copie a chave PIX.</div>'; }
+    }
+    iconRefresh();
+  }
+  function closeModal() { $('donationModal').classList.add('hidden'); $('donationModal').classList.remove('flex'); }
+  async function exportPDF() {
+    closeModal();
+    const element = $('resume');
+    const filename = (($('name').value.trim() || 'curriculo').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')) + '-curriculo.pdf';
+    if (window.html2pdf) {
+      const options = {
+        margin: 0, filename, image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollY: 0 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css','legacy'], avoid: ['.entry','.resume-header','h2'] }
+      };
+      try { await html2pdf().set(options).from(element).save(); }
+      catch (err) { alert('Não foi possível gerar o PDF automaticamente. Vamos abrir a impressão do navegador.'); window.print(); }
+    } else { window.print(); }
+  }
+
+  document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b===btn));
+    document.querySelectorAll('.editor-panel').forEach(p=>p.classList.toggle('hidden-panel',p.id!=='panel-'+btn.dataset.tab));
+  }));
+  fields.forEach(id => { if ($(id)) $(id).addEventListener('input', renderResume); });
+  $('addExperience').addEventListener('click',()=>addExperience());
+  $('addEducation').addEventListener('click',()=>addEducation());
+  $('experienceList').addEventListener('input',e=>{ if(!e.target.matches('.exp-field')) return; const item=state.experiences.find(x=>x.id===Number(e.target.dataset.id)); if(item){item[e.target.dataset.key]=e.target.value;renderResume();} });
+  $('experienceList').addEventListener('click',e=>{const btn=e.target.closest('.remove-exp');if(btn){state.experiences=state.experiences.filter(x=>x.id!==Number(btn.dataset.id));renderExperienceEditor();renderResume();}});
+  $('educationList').addEventListener('input',e=>{if(!e.target.matches('.edu-field'))return;const item=state.education.find(x=>x.id===Number(e.target.dataset.id));if(item){item[e.target.dataset.key]=e.target.value;renderResume();}});
+  $('educationList').addEventListener('click',e=>{const btn=e.target.closest('.remove-edu');if(btn){state.education=state.education.filter(x=>x.id!==Number(btn.dataset.id));renderEducationEditor();renderResume();}});
+  $('addSkill').addEventListener('click',()=>{const v=$('skillInput').value.trim();if(v&&!state.skills.some(s=>s.toLowerCase()===v.toLowerCase())){state.skills.push(v);renderSkills();renderResume();}$('skillInput').value='';});
+  $('skillInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('addSkill').click();}});
+  $('skillChips').addEventListener('click',e=>{const btn=e.target.closest('.remove-skill');if(btn){state.skills.splice(Number(btn.dataset.index),1);renderSkills();renderResume();}});
+  document.querySelectorAll('.template-choice').forEach(btn=>btn.addEventListener('click',()=>setTemplate(btn.dataset.template)));
+  $('templateSelect').addEventListener('change',e=>setTemplate(e.target.value));
+  document.querySelectorAll('.color-dot').forEach(btn=>btn.addEventListener('click',()=>{state.accent=btn.dataset.color;document.querySelectorAll('.color-dot').forEach(b=>b.classList.toggle('selected',b===btn));renderResume();}));
+  $('sampleTop').addEventListener('click',loadSample); $('sampleBottom').addEventListener('click',loadSample);
+  $('clearAll').addEventListener('click',clearAll);
+  $('openDonation').addEventListener('click',openModal); $('printTop').addEventListener('click',openModal);
+  $('closeModal').addEventListener('click',closeModal);
+  $('donationModal').addEventListener('click',e=>{if(e.target===$('donationModal'))closeModal();});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+  $('copyPix').addEventListener('click',async()=>{
+    try { await navigator.clipboard.writeText('44999632980'); }
+    catch(e) { const temp=document.createElement('textarea');temp.value='44999632980';document.body.appendChild(temp);temp.select();document.execCommand('copy');temp.remove(); }
+    $('copyFeedback').classList.remove('hidden'); $('copyPix').innerHTML='<i data-lucide="check" class="w-4 h-4"></i><span>Copiado!</span>'; iconRefresh();
+    setTimeout(()=>{$('copyPix').innerHTML='<i data-lucide="copy" class="w-4 h-4"></i><span>Copiar chave</span>';iconRefresh();},2200);
+  });
+  $('donateAndDownload').addEventListener('click',exportPDF); $('downloadWithoutDonation').addEventListener('click',exportPDF);
+  addExperience(); addEducation(); renderSkills(); renderResume(); iconRefresh();
+</script>
+</body>
+</html>
